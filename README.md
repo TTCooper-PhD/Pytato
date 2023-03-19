@@ -42,6 +42,8 @@ pip install -r requirements.txt
 
 ## Usage
 - Prepare your Enzyme1 and Enzyme2-digested samples and acquire LC-MS/MS data in DIA mode.
+### For a list of available enzymes and their cleavage rules, see the [Available Enzymes](available_enzymes.md) document.
+
 - Process raw data files and generate spectral libraries for both Enzyme1 and Enzyme2 samples.
 - Run Pytato by providing the necessary input files and parameters.
 
