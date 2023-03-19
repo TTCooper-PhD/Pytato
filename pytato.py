@@ -1,7 +1,9 @@
 #Pytato 2023 
 
 import argparse
+import csv
 import os
+from pyteomics import mass
 import subprocess
 from support import *
 
@@ -104,6 +106,22 @@ def run_dia_nn(input_folder, library_file, output_folder, dia_nn_exe_path):
 # output_folder = "/path/to/output_folder"
 # dia_nn_exe_path = "/path/to/dia_nn.exe"
 
+## Step 4: Produce Theoretical Spectra for 2nd Search using High-Confidence Hits from 1st Search
+#
+
+
+def generate_theoretical_spectra(peptides, charge_range=(1, 3), output_file="theoretical_spectra.tsv"):
+    with open(output_file, 'w', newline='') as f:
+        writer = csv.writer(f, delimiter='\t')
+        writer.writerow(['Peptide', 'Charge', 'IonType', 'IonNumber', 'mz'])
+
+        for peptide in peptides:
+            for charge in range(charge_range[0], charge_range[1] + 1):
+                spectrum = mass.generate_spectrum(peptide, charge=charge, ion_types=('b', 'y'))
+                for ion_type, ion_series in spectrum.items():
+                    for ion_number, mz in enumerate(ion_series, start=1):
+                        writer.writerow([peptide, charge, ion_type, ion_number, mz])
+
 
 
 #````````````````````````````````````````````````````````````````````````````````````````````````````````
@@ -135,7 +153,14 @@ def main():
 
         convert_raw_to_mzml(args.input_folder, args.mzml_folder, args.msconvert_path) ## RAW to mzML
         generate_spectral_library(args.output_folder, args.output_folder, args.dia_umpire_jar_path)
+        #First Search (Forward)
         run_dia_nn(args.input_folder, args.lib_file1, args.output_folder, args.dia_nn_exe_path)
+        #Second Search (Forward)
+        generate_theoretical_spectra(digested_peptides, output_file="theoretical_spectra.tsv")
+
+        #First Search (Reverse)
+        #Second Search (Reverse)
+        #Concatenate/Summarize Data
 
 
 
