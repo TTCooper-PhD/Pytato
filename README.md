@@ -31,7 +31,7 @@ Follow the installation instructions provided by each component's respective Git
 Next, clone the Pytato repository:
 
 ```bash
-git clone https://github.com/yourusername/Pytato.git
+git clone https://github.com/TTCooper-PhD/Pytato.git
 ```
 
 Install the required python packages:
