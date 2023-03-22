@@ -4,6 +4,7 @@ import argparse
 import csv
 import os
 import pandas as pd
+from pathlib import Path
 from pyteomics import fasta, mass, parser
 import subprocess
 from support import *
@@ -79,7 +80,7 @@ def fasta_to_proteins(fasta_file):
     return proteins
 
 
-def run_dia_nn(input_folder, library_files, output_folder, dia_nn_exe_path):
+def run_dia_nn(library_files, input_folder, output_folder, dia_nn_exe_path, sn_ratio):
     mzml_files = [f for f in os.listdir(input_folder) if f.lower().endswith('.mzml')]
 
     if not mzml_files:
@@ -98,12 +99,13 @@ def run_dia_nn(input_folder, library_files, output_folder, dia_nn_exe_path):
         library_str = ' '.join([f"--lib {lib}" for lib in library_files])
 
         # Build the command to run DIA-NN
-        cmd = f"{dia_nn_exe_path} --f {input_file} {library_str} --out {output_file_prefix}"
+        cmd = f"{dia_nn_exe_path} {library_str} --threads 8 --out {report_file} --sn {sn_ratio} --f {input_file}"
 
         # Execute the command
         subprocess.run(cmd, shell=True, check=True)
 
     return report_files
+
 
 def get_high_confidence_proteins(report_tsv, fdr_threshold=0.01):
     df = pd.read_csv(report_tsv, sep='\t')
@@ -133,9 +135,81 @@ def generate_theoretical_spectra(peptides, charge_range=(1, 3), output_file="the
     
     return output_file
 
+def concatenate_results(results_1, enzyme1_name, results_2, enzyme2_name):
+    # Read search results as dataframes
+    df_1 = pd.read_csv(results_1)
+    df_2 = pd.read_csv(results_2)
 
+    # Create a new column 'Detected_in' and set values to enzyme name
+    df_1['Detected_in'] = f'{enzyme1_name}'
+    df_2['Detected_in'] = f'{enzyme2_name}'
 
+    # Concatenate dataframes
+    combined_results = pd.concat([df_1, df_2], axis=0, ignore_index=True)
 
+    # Create a new column 'Detected_in_both' and set its default value to False
+    combined_results['Detected_in_both'] = False
+
+    # Group the combined dataframe by protein and iterate through groups
+    grouped = combined_results.groupby('Protein')
+    for protein, group in grouped:
+        # Check if protein is detected in both enzymes
+        if group['Detected_in'].nunique() == 2:
+            # Update 'Detected_in_both' column for the protein
+            combined_results.loc[group.index, 'Detected_in_both'] = True
+
+    return combined_results
+
+def run_analysis(args):
+        ##Preheat
+        convert_raw_to_mzml(args.input_folder1, args.mzml_folder, args.msconvert_path) ## RAW to mzML
+        mgf1=generate_spectral_library(args.output_folder, args.output_folder, args.dia_umpire_jar_path) #NEED TO MODIFY FUNCTION TO FILTER FOR ENZYME IN SAMPLE NAME
+        mgf2=generate_spectral_library(args.output_folder, args.output_folder, args.dia_umpire_jar_path) #NEED TO MODIFY FUNCTION TO FILTER FOR ENZYME IN SAMPLE NAME
+        ##First Bake/Search (Forward)
+        total_proteins=fasta_to_proteins(args.fasta_file_path) #pull down proteins from FASTA file
+        peptide_generator = generate_digested_peptides(args.fasta_file_path, total_proteins, args.enzyme1_rule) #generate peptides from total_proteins using enzyme1
+        spectra1=generate_theoretical_spectra(peptide_generator) #generate theoretical spectrum with peptides        
+        results=run_dia_nn(mgf1, spectra1, args.output_folder, args.dia_nn_exe_path) #run DIA-NN using mgf files (Group1)
+        confidence_threshold1 = int(args.confidence_lvl_1) #Determin Q-value threshold
+        high_conf_proteins=[] #Collect Proteins Identified with High Confidence (e.g. FDR=0.01)
+        for result in results:
+            #Collect Proteins Identified with High Confidence from Each Sample Analyzed
+            highcon_pro = get_high_confidence_proteins(result, confidence_threshold1)
+            high_conf_proteins.append(highcon_pro)
+        high_conf_proteins=list(set(high_conf_proteins))
+        ##Second Bake/Search (Forward)
+        peptide_generator = generate_digested_peptides(args.fasta_file_path, high_conf_proteins, args.enzyme2_rule) #Use list of high-confidence proteins from first search to refine theoretical peptides for 2nd search
+        spectra2=generate_theoretical_spectra(peptide_generator, output_file=f"{args.enzyme2_name}_spectra.tsv") #Generare theoretical spectra library
+        output_fwd=f"{args.output}/Output_{args.enzyme2_name}"
+        results=run_dia_nn(mgf2, spectra2, args.output_folder, args.dia_nn_exe_path) #Run DIA-NN
+
+        ##+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ TWICE BAKED 
+
+        #First Search (Reverse)
+        peptide_generator = generate_digested_peptides(args.fasta_file_path, total_proteins, args.enzyme2_rule) #generate peptides from total_proteins using enzyme1
+        spectra1=generate_theoretical_spectra(peptide_generator) #generate theoretical spectrum with peptides        
+        results=run_dia_nn(mgf2, spectra1, args.output_folder, args.dia_nn_exe_path) #run DIA-NN using mgf files (Group1)
+        confidence_threshold1 = int(args.confidence_lvl_1) #Determin Q-value threshold
+        high_conf_proteins=[] #Collect Proteins Identified with High Confidence (e.g. FDR=0.01)
+        for result in results:
+            #Collect Proteins Identified with High Confidence from Each Sample Analyzed
+            highcon_pro = get_high_confidence_proteins(result, confidence_threshold1)
+            high_conf_proteins.append(highcon_pro)
+
+        #Second Search (Reverse)
+        peptide_generator = generate_digested_peptides(args.fasta_file_path, high_conf_proteins, args.enzyme1_rule) #Use list of high-confidence proteins from first search to refine theoretical peptides for 2nd search
+        spectra2=generate_theoretical_spectra(peptide_generator, output_file=f"{args.enzyme1_name}_spectra.tsv") #Generare theoretical spectra library
+        output_rev=f"{args.output}/Output_{args.enzyme1_name}"
+        results=run_dia_nn(mgf1, spectra2, output_rev, args.dia_nn_exe_path) #Run DIA-NN
+
+        #Concatenate/Summarize Data
+        outputs=[output_rev,output_fwd]
+        
+        for output in outputs:
+            #slice out protein,gene,q-value,identification layer, etc. 
+            #produce output file
+            #write out csv files
+            pass
 
 
 #````````````````````````````````````````````````````````````````````````````````````````````````````````
@@ -166,43 +240,22 @@ def main():
     parser.add_argument('--enzyme2_mc', default='2',help='Missed Clevage Number for Enzyme2')
     parser.add_argument('--confidence_lvl_1', default="0.90",help="Confidence level for Forward Search (First Bake), Selects Proteins with high-confidence from 1st DIA-NN Seach (Enzyme1)")
     parser.add_argument('--confidence_lvl_2', default="0.90",help="Confidence level for Reverse Search (Second Bake), Selects Proteins with high-confidence from 2nd DIA-NN Seach (Enzyme2)")
-    
+    parser.add_argument('--sn_ratio', default="1", help='Signal-to-noise ratio threshold for DIA-NN search (default: %(default)s).')   
     args = parser.parse_args()
     ## ENVIROMENT SETUP
-    if args.pull_msconvert == "Y":
-        download_msconvert(args.pytato_folder)
-    if args.pull_umpire == "Y":
-        download_dia_umpire(args.pytato_folder, args.dia_umpire_url)
-    if args.pull_diann == "Y":
-        download_dia_nn(args.pytato_folder,args.dia_nn_url)
+    def setup_environment(args):
+        if args.pull_msconvert == "Y":
+            download_msconvert(args.pytato_folder)
+        if args.pull_umpire == "Y":
+            download_dia_umpire(args.pytato_folder, args.dia_umpire_url)
+        if args.pull_diann == "Y":
+            download_dia_nn(args.pytato_folder, args.dia_nn_url)
+    
+    if args.output_folder == os.listdir():
+        args.output_folder = Path.cwd()
     
     if args.bake == "ON": ## EXECUTE SEARCH
-        ##Preheat
-        convert_raw_to_mzml(args.input_folder1, args.mzml_folder, args.msconvert_path) ## RAW to mzML
-        mgf1=generate_spectral_library(args.output_folder, args.output_folder, args.dia_umpire_jar_path)
-
-        ##First Bake/Search (Forward)
-        total_proteins=fasta_to_proteins(args.fasta_file_path)
-        peptide_generator = generate_digested_peptides(args.fasta_file_path, total_proteins, args.enzyme1_rule)
-        spectra1=generate_theoretical_spectra(peptide_generator)        
-        results=run_dia_nn(mgf1, spectra1, args.output_folder, args.dia_nn_exe_path)
-        confidence_threshold1 = int(args.confidence_lvl_1)
-        high_conf_proteins=[]
-        for result in results:
-            highcon_pro = get_high_confidence_proteins(result, confidence_threshold1)
-            high_conf_proteins.append(highcon_pro)
-        high_conf_proteins=list(set(high_conf_proteins))
-        ##Second Bake/Search (Forward)
-        peptide_generator = generate_digested_peptides(args.fasta_file_path, high_conf_proteins, args.enzyme2_rule)
-        spectra2=generate_theoretical_spectra(peptide_generator, output_file=f"{args.enzyme2_name}_spectra.tsv")
-        results=run_dia_nn(args.input_folder, spectra2, args.output_folder, args.dia_nn_exe_path)
-
-
-        #First Search (Reverse)
-        #Second Search (Reverse)
-        #Concatenate/Summarize Data
-
-
+        run_analysis(args)
 
 if __name__ == '__main__':
     main()
