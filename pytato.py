@@ -1,6 +1,7 @@
 #Pytato 2023 
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import csv
 import os
 import pandas as pd
@@ -160,11 +161,16 @@ def concatenate_results(results_1, enzyme1_name, results_2, enzyme2_name):
 
     return combined_results
 
-def run_analysis(args):
-        ##Preheat
-        convert_raw_to_mzml(args.input_folder1, args.mzml_folder, args.msconvert_path) ## RAW to mzML
-        mgf1=generate_spectral_library(args.output_folder, args.output_folder, args.dia_umpire_jar_path) #NEED TO MODIFY FUNCTION TO FILTER FOR ENZYME IN SAMPLE NAME
-        mgf2=generate_spectral_library(args.output_folder, args.output_folder, args.dia_umpire_jar_path) #NEED TO MODIFY FUNCTION TO FILTER FOR ENZYME IN SAMPLE NAME
+def run_search(args,direction):
+    raw_files = [f for f in os.listdir(args.input_folder) if f.lower().endswith('.raw')]
+    
+    if raw_files:
+        convert_raw_to_mzml(args.input_folder, args.mzml_folder, args.msconvert_path)  # RAW to mzML
+
+    mgf1=generate_spectral_library(args.output_folder, args.output_folder, args.dia_umpire_jar_path) #NEED TO MODIFY FUNCTION TO FILTER FOR ENZYME IN SAMPLE NAME
+    mgf2=generate_spectral_library(args.output_folder, args.output_folder, args.dia_umpire_jar_path) #NEED TO MODIFY FUNCTION TO FILTER FOR ENZYME IN SAMPLE NAME
+
+    if direction == "forward":
         ##First Bake/Search (Forward)
         total_proteins=fasta_to_proteins(args.fasta_file_path) #pull down proteins from FASTA file
         peptide_generator = generate_digested_peptides(args.fasta_file_path, total_proteins, args.enzyme1_rule) #generate peptides from total_proteins using enzyme1
@@ -183,8 +189,7 @@ def run_analysis(args):
         output_fwd=f"{args.output}/Output_{args.enzyme2_name}"
         results=run_dia_nn(mgf2, spectra2, args.output_folder, args.dia_nn_exe_path) #Run DIA-NN
 
-        ##+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ TWICE BAKED 
-
+    elif direction == "reverse":
         #First Search (Reverse)
         peptide_generator = generate_digested_peptides(args.fasta_file_path, total_proteins, args.enzyme2_rule) #generate peptides from total_proteins using enzyme1
         spectra1=generate_theoretical_spectra(peptide_generator) #generate theoretical spectrum with peptides        
@@ -202,14 +207,8 @@ def run_analysis(args):
         output_rev=f"{args.output}/Output_{args.enzyme1_name}"
         results=run_dia_nn(mgf1, spectra2, output_rev, args.dia_nn_exe_path) #Run DIA-NN
 
-        #Concatenate/Summarize Data
-        outputs=[output_rev,output_fwd]
-        
-        for output in outputs:
-            #slice out protein,gene,q-value,identification layer, etc. 
-            #produce output file
-            #write out csv files
-            pass
+    else:
+        raise ValueError("Invalid search direction.")
 
 
 #````````````````````````````````````````````````````````````````````````````````````````````````````````
@@ -255,7 +254,9 @@ def main():
         args.output_folder = Path.cwd()
     
     if args.bake == "ON": ## EXECUTE SEARCH
-        run_analysis(args)
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            # Submit the forward and reverse searches to the executor
+            search_results = list(executor.map(run_search, ["forward", "reverse"], [args, args]))
 
 if __name__ == '__main__':
     main()
