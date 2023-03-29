@@ -11,53 +11,53 @@ import subprocess
 from support import *
 
 
-def convert_raw_to_mzml(input_folder, output_folder, msconvert_path):
+def convert_raw_to_mzml(input_folder, msconvert_path, output_subfolder="mzML"):
+    """
+    Converts .RAW files in the input folder to .mzML files and saves them in a subdirectory.
+    
+    Parameters:
+    input_folder (str): Path to the folder containing .RAW files.
+    msconvert_path (str): Path to the msconvert executable.
+    output_subfolder (str, optional): Name of the subdirectory to save the converted .mzML files. Defaults to "mzML".
+    
+    Returns:
+    str: Path to the output folder where the converted .mzML files are saved.
+    """
     raw_files = [f for f in os.listdir(input_folder) if f.lower().endswith('.raw')]
-    os.makedirs(output_folder,exist_ok=True)
 
     if not raw_files:
         print("No .RAW files found in the input folder.")
-        return
+        return None
+
+    output_folder = os.path.join(input_folder, output_subfolder)
+    os.makedirs(output_folder, exist_ok=True)
 
     for raw_file in raw_files:
         input_file = os.path.join(input_folder, raw_file)
         print(f"Converting {input_file} to mzML...")
-        cmd = f"{msconvert_path} {input_file} -o {output_folder} --mzML"
+        cmd = f"\"{msconvert_path}\" {input_file} -o {output_folder} --mzML --filter \"peakPicking vendor msLevel=1\" --filter \"zeroSamples removeExtra\""
         subprocess.run(cmd, shell=True, check=True)
 
+    return output_folder
 
-def generate_spectral_library(input_folder, output_folder, dia_umpire_jar_path):
+
+def generate_spectral_library(input_folder, output_folder, dia_umpire_path, max_memory='8G'):
     mzml_files = [f for f in os.listdir(input_folder) if f.lower().endswith('.mzml')]
     os.makedirs(output_folder, exist_ok=True)
+    
     if not mzml_files:
         print("No .mzML files found in the input folder.")
         return []
 
-    # Set the parameters for DIA-Umpire
-    params = {
-        'AdjustFragIntensity': 'true',
-        'MS1PPM': '10',
-        'MS2PPM': '20',
-        'MS2SN': '1.5',
-        'MS1SN': '1.5',
-        'Thread': '4',
-        'Ram': '20000',
-        'Quant': 'false'
-    }
-
-    # Convert the parameters dictionary to a string format
-    params_str = ' '.join([f"-{k} {v}" for k, v in params.items()])
+    dia_umpire_directory = os.path.dirname(dia_umpire_path)
+    diaumpire_params_path = os.path.join(dia_umpire_directory, "diaumpire_se.params")
 
     mgf_files = []
 
     for mzml_file in mzml_files:
         input_file = os.path.join(input_folder, mzml_file)
         print(f"Generating spectral library for {input_file}...")
-
-        # Build the command to run DIA-Umpire
-        cmd = f"java -jar {dia_umpire_jar_path} {input_file} -{output_folder} {params_str}"
-
-        # Execute the command
+        cmd = f'java -jar -Xmx{max_memory} "{dia_umpire_path}" "{input_file}" "{diaumpire_params_path}"'
         subprocess.run(cmd, shell=True, check=True)
 
         mgf_file = os.path.join(output_folder, f"{os.path.splitext(mzml_file)[0]}_Q1.mgf")

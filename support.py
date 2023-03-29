@@ -2,6 +2,7 @@
 from bs4 import BeautifulSoup
 import os
 import requests
+import zipfile
 
 #``````````````````````````````````````````````````````````````````````````````````````````````````````````````
 
@@ -42,24 +43,22 @@ def download_msconvert(output_folder):
 #``````````````````````````````````````````````````````````````````````````````````````````````````````````````
 
 
-def download_dia_umpire(py_path, dia_umpire_url):
+def download_dia_umpire(py_path, dia_umpire_zip_url):
     dia_umpire_jar_name = 'DIA_Umpire_SE.jar'
     dia_umpire_jar_path = os.path.join(py_path, dia_umpire_jar_name)
 
     if not os.path.exists(dia_umpire_jar_path):
-        print(f"{dia_umpire_jar_name} not found. Downloading from GitHub...")
-        response = requests.get(dia_umpire_url)
+        print(f"{dia_umpire_jar_name} not found. Downloading from SourceForge...")
+        response = requests.get(dia_umpire_zip_url)
         response.raise_for_status()
 
-        with open(dia_umpire_jar_path, 'wb') as f:
-            f.write(response.content)
+        with zipfile.ZipFile(io.BytesIO(response.content)) as zf:
+            with zf.open(dia_umpire_jar_name) as jar_file:
+                with open(dia_umpire_jar_path, 'wb') as f:
+                    f.write(jar_file.read())
         print(f"{dia_umpire_jar_name} downloaded successfully.")
     else:
         print(f"{dia_umpire_jar_name} already exists in the Pytato folder.")
-
-# Example usage
-# pytato_folder_path = "/Dekstop/Pytato"
-# dia_umpire_url = "https://github.com/diaumpire/DIA-Umpire/releases/download/v2.2/DIA_Umpire_SE.jar"
 
 #````````````````````````````````````````````````````````````````````````````````````````````````````````
 
