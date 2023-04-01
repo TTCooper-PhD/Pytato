@@ -6,7 +6,7 @@ import csv
 import os
 import pandas as pd
 from pathlib import Path
-from pyteomics import fasta, mass, parser
+from pyteomics import parser,fasta,mass, mgf,auxiliary
 import shutil
 import subprocess
 from support import *
@@ -70,6 +70,44 @@ def generate_spectral_library(input_folder, output_folder, dia_umpire_path, max_
 
     return mgf_files
 
+
+def mgf_to_tsv(mgf_files, output_folder):
+    """
+    Convert a list of MGF files to TSV files in a specified output folder.
+
+    This function reads MGF files, extracts the relevant information,
+    and writes it to corresponding TSV files in the output folder.
+    The output TSV files will have the same name as the input MGF files,
+    but with a .tsv extension.
+
+    Parameters
+    ----------
+    mgf_files : list of str
+        A list of MGF file paths to be converted.
+    output_folder : str
+        The path to the folder where the TSV files will be saved.
+
+    Returns
+    -------
+    str
+        The path to the output folder containing the TSV files.
+    """
+    os.makedirs(output_folder, exist_ok=True)
+
+    for mgf_file in mgf_files:
+        file_base = os.path.basename(mgf_file)
+        file_name, _ = os.path.splitext(file_base)
+        tsv_file = os.path.join(output_folder, f"{file_name}.tsv")
+
+        with mgf.read(mgf_file) as reader, open(tsv_file, "w") as writer:
+            writer.write("mz\tintensity\n")
+            for spectrum in reader:
+                mz_list = spectrum["m/z array"]
+                intensity_list = spectrum["intensity array"]
+                for mz, intensity in zip(mz_list, intensity_list):
+                    writer.write(f"{mz}\t{intensity}\n")
+
+    return output_folder
 
 
 def fasta_to_proteins(fasta_file):
