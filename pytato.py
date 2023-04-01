@@ -7,6 +7,7 @@ import os
 import pandas as pd
 from pathlib import Path
 from pyteomics import fasta, mass, parser
+import shutil
 import subprocess
 from support import *
 
@@ -60,8 +61,12 @@ def generate_spectral_library(input_folder, output_folder, dia_umpire_path, max_
         cmd = f'java -jar -Xmx{max_memory} "{dia_umpire_path}" "{input_file}" "{diaumpire_params_path}"'
         subprocess.run(cmd, shell=True, check=True)
 
-        mgf_file = os.path.join(output_folder, f"{os.path.splitext(mzml_file)[0]}_Q1.mgf")
-        mgf_files.append(mgf_file)
+        # Move the generated MGF file to the output folder
+        src_mgf_file = os.path.join(input_folder, f"{os.path.splitext(mzml_file)[0]}_Q1.mgf")
+        dst_mgf_file = os.path.join(output_folder, f"{os.path.splitext(mzml_file)[0]}_Q1.mgf")
+        shutil.move(src_mgf_file, dst_mgf_file)
+
+        mgf_files.append(dst_mgf_file)
 
     return mgf_files
 
