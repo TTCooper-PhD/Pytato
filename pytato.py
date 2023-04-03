@@ -99,16 +99,19 @@ def generate_spectral_library(dia_nn_exe_path, fasta_file):
         print("Spectral library file not found.")
         return ""
     
+
+
+    
 def run_dia_nn(dia_nn_exe_path, library_files, fasta_files, input_folder, output_folder,report_file_name="report", qval=0.01,threads=30,missed_cleavages=1,
                cut="K*,R*",min_frag_mz=200,max_frag_mz=1800,min_pre_mz=300,max_pre_mz=1200, min_pep_len=7,max_pep_len=30,ms2_acc=20,ms2_acc_cal=20,ms1_acc=20,
                min_pre_z=1,max_pre_z=4,fasta_search=False,profiling="smart",MBR=True,fasta_speclib_annotation=False,frag_restrict_quant=True,heuristic_search=True):
 
-    mzml_files = [f"/{f}" for f in os.listdir(input_folder) if f.lower().endswith('.mzml')]
+    mzml_files = [f"{f}" for f in os.listdir(input_folder) if f.lower().endswith('.mzml')]
     os.makedirs(output_folder,exist_ok=True)
     if not mzml_files:
         print("No .mzML files found in the input folder.")
         return []
-    file_str = ' '.join([f"--lib {fil}" for fil in mzml_files])
+    file_str = ' '.join([f"--f {fil}" for fil in mzml_files])
 
     if isinstance(library_files, str):
         library_files = [library_files]
@@ -118,7 +121,7 @@ def run_dia_nn(dia_nn_exe_path, library_files, fasta_files, input_folder, output
         fasta_files = [fasta_files]
     fasta_str = ' '.join([f"--fasta {fasta}" for fasta in fasta_files])
 
-    report_file=f"'{output_folder}/{report_file_name}.tsv'"
+    report_file=f"{output_folder}/{report_file_name}.tsv"
 
     if fasta_search==True:
         fasta_search_out="--fasta-search"
@@ -156,19 +159,20 @@ def run_dia_nn(dia_nn_exe_path, library_files, fasta_files, input_folder, output
     cmd = f"{dia_nn_exe_path} \
     {file_str} \
     {library_str}\
-    {threads} \
+    --threads {threads} \
     --verbose 4 \
     --out {report_file} \
     --qvalue {qval} \
     --matrices \
-    --out-lib f'{report_file_name}-lib.tsv\" \
+    --out-lib {report_file_name}-lib.tsv \
     --gen-spec-lib \
     --predictor \
     {fasta_str}\
     {fasta_search_out} \
     --min-fr-mz {min_frag_mz} \
     --max-fr-mz {max_frag_mz} \
-    --met-excision --cut {cut} \
+    --met-excision \
+    --cut {cut} \
     --missed-cleavages {missed_cleavages} \
     --min-pep-len {min_pep_len} --max-pep-len {max_pep_len} \
     --min-pr-mz {min_pre_mz} --max-pr-mz {max_pre_mz} \
