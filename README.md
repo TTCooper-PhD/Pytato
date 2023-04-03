@@ -14,7 +14,7 @@ Enzyme2=Thermolysin
 - Support for multiple proteases to improve protein identification confidence
 - Generation of theoretical spectra for improved peptide matching
 
-![image](https://user-images.githubusercontent.com/36017084/229609879-717679cd-cdab-400c-bfb3-de75a8524702.png)
+![logo_small](https://user-images.githubusercontent.com/36017084/229610464-03d73a08-c55e-4e9f-8dec-ac0af352a945.png)
 
 
 ## Installation
