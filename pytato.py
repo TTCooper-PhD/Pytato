@@ -42,74 +42,6 @@ def convert_raw_to_mzml(input_folder, msconvert_path, output_subfolder="mzML"):
     return output_folder
 
 
-def generate_spectral_library(input_folder, output_folder, dia_umpire_path, max_memory='8G'):
-    mzml_files = [f for f in os.listdir(input_folder) if f.lower().endswith('.mzml')]
-    os.makedirs(output_folder, exist_ok=True)
-    
-    if not mzml_files:
-        print("No .mzML files found in the input folder.")
-        return []
-
-    dia_umpire_directory = os.path.dirname(dia_umpire_path)
-    diaumpire_params_path = os.path.join(dia_umpire_directory, "diaumpire_se.params")
-
-    mgf_files = []
-
-    for mzml_file in mzml_files:
-        input_file = os.path.join(input_folder, mzml_file)
-        print(f"Generating spectral library for {input_file}...")
-        cmd = f'java -jar -Xmx{max_memory} "{dia_umpire_path}" "{input_file}" "{diaumpire_params_path}"'
-        subprocess.run(cmd, shell=True, check=True)
-
-        # Move the generated MGF file to the output folder
-        src_mgf_file = os.path.join(input_folder, f"{os.path.splitext(mzml_file)[0]}_Q1.mgf")
-        dst_mgf_file = os.path.join(output_folder, f"{os.path.splitext(mzml_file)[0]}_Q1.mgf")
-        shutil.move(src_mgf_file, dst_mgf_file)
-
-        mgf_files.append(dst_mgf_file)
-
-    return mgf_files
-
-
-def mgf_to_tsv(mgf_files, output_folder):
-    """
-    Convert a list of MGF files to TSV files in a specified output folder.
-
-    This function reads MGF files, extracts the relevant information,
-    and writes it to corresponding TSV files in the output folder.
-    The output TSV files will have the same name as the input MGF files,
-    but with a .tsv extension.
-
-    Parameters
-    ----------
-    mgf_files : list of str
-        A list of MGF file paths to be converted.
-    output_folder : str
-        The path to the folder where the TSV files will be saved.
-
-    Returns
-    -------
-    str
-        The path to the output folder containing the TSV files.
-    """
-    os.makedirs(output_folder, exist_ok=True)
-
-    for mgf_file in mgf_files:
-        file_base = os.path.basename(mgf_file)
-        file_name, _ = os.path.splitext(file_base)
-        tsv_file = os.path.join(output_folder, f"{file_name}.tsv")
-
-        with mgf.read(mgf_file) as reader, open(tsv_file, "w") as writer:
-            writer.write("mz\tintensity\n")
-            for spectrum in reader:
-                mz_list = spectrum["m/z array"]
-                intensity_list = spectrum["intensity array"]
-                for mz, intensity in zip(mz_list, intensity_list):
-                    writer.write(f"{mz}\t{intensity}\n")
-
-    return output_folder
-
-
 def fasta_to_proteins(fasta_file):
     with open(fasta_file, 'r') as file_handle:
         content = file_handle.read()
@@ -123,32 +55,112 @@ def fasta_to_proteins(fasta_file):
 
     return proteins
 
+def generate_spectral_library(dia_nn_exe_path, fasta_file):
+    """
+    Generates a spectral library from a given FASTA file using DIA-NN.
 
-def run_dia_nn(library_files, input_folder, output_folder, dia_nn_exe_path, sn_ratio):
-    mzml_files = [f for f in os.listdir(input_folder) if f.lower().endswith('.mzml')]
+    Args:
+        dia_nn_exe_path (str): Path to the DIA-NN executable.
+        fasta_file (str): Path to the FASTA file.
 
+    Returns:
+        str: Path to the generated spectral library file ('spec-lib-predicted.dlib').
+    """
+    if not os.path.exists(fasta_file):
+        print(f"FASTA file '{fasta_file}' not found.")
+        return ""
+
+    output_file = "spec-lib-predicted.dlib"
+
+    cmd = f"{dia_nn_exe_path} \
+    --lib \"\" \
+    --threads 30 \
+    --verbose 3 \
+    --out \"report.tsv\" \
+    --qvalue 0.01 \
+    --matrices \
+    --out-lib \"report-lib.tsv\" \
+    --gen-spec-lib \
+    --predictor \
+    --fasta \"{fasta_file}\" \
+    --fasta-search"
+
+    # Execute the command
+    subprocess.run(cmd, shell=True, check=True)
+
+    if os.path.exists(output_file):
+        return list(os.path.abspath(output_file))
+    else:
+        print("Spectral library file not found.")
+        return ""
+    
+def run_dia_nn(dia_nn_exe_path, library_files=list(), fasta_files=list(), input_folder=str(), output_folder=str(),report_file_name=str(), sn_ratio=1.0,qval=0.01, threads=30,missed_cleavages=1,
+               cut="K*,R*",min_frag_mz=200,max_frag_mz=1800,min_pre_mz=300,max_pre_mz=1200, min_pep_len=7,max_pep_len=30,
+               min_pre_z=1,max_pre_z=4):
+    """
+    Runs DIA-NN on a set of .mzML files from a specified input folder using specified parameters.
+
+    Args:
+        dia_nn_exe_path (str): Path to the DIA-NN executable.
+        library_files (list): List of spectral library files (.speclib).
+        fasta_files (list): List of FASTA files (.fasta).
+        input_folder (str): Path to the input folder containing .mzML files.
+        output_folder (str): Path to the output folder where the results will be saved.
+        report_file_name (str): Name of the output report file (without the extension).
+        sn_ratio (float): Signal-to-noise ratio.
+        qval (float): Target q-value.
+        threads (int): Number of threads to use for processing.
+        missed_cleavages (int): Maximum number of missed cleavages allowed.
+        cut (str): Protease cleavage rule.
+        min_frag_mz (int): Minimum fragment m/z.
+        max_frag_mz (int): Maximum fragment m/z.
+        min_pre_mz (int): Minimum precursor m/z.
+        max_pre_mz (int): Maximum precursor m/z.
+        min_pep_len (int): Minimum peptide length.
+        max_pep_len (int): Maximum peptide length.
+        min_pre_z (int): Minimum precursor charge.
+        max_pre_z (int): Maximum precursor charge.
+
+    Returns:
+        str: Path to the generated report file.
+    """
+    mzml_files = [f"/{f}" for f in os.listdir(input_folder) if f.lower().endswith('.mzml')]
+    os.makedirs(output_folder,exist_ok=True)
     if not mzml_files:
         print("No .mzML files found in the input folder.")
         return []
 
-    report_files = []
+    file_str = ' '.join([f"--lib {fil}" for fil in mzml_files])
+    library_str = ' '.join([f"--lib {lib}" for lib in library_files])
+    fasta_str = ' '.join([f"--fasta {fasta}" for fasta in fasta_files])
+    report_file=f"'{output_folder}/{report_file_name}.tsv'"
 
-    for mzml_file in mzml_files:
-        input_file = os.path.join(input_folder, mzml_file)
-        output_file_prefix = os.path.join(output_folder, os.path.splitext(mzml_file)[0])
-        report_file = f"{output_file_prefix}.report.tsv"
-        report_files.append(report_file)
-        print(f"Processing {input_file} with DIA-NN...")
+    cmd = f"{dia_nn_exe_path} \
+    {file_str} \
+    {library_str}\
+    {threads} \
+    --verbose 3 \
+    --out {report_file} \
+    --qvalue {qval} \
+    --matrices \
+    --out-lib f'{report_file_name}-lib.tsv\" \
+    --gen-spec-lib \
+    --predictor \
+    {fasta_str}\
+    --fasta-search \
+    --min-fr-mz {min_frag_mz} \
+    --max-fr-mz {max_frag_mz} \
+    --met-excision --cut {cut} \
+    --missed-cleavages {missed_cleavages} \
+    --min-pep-len {min_pep_len} --max-pep-len {max_pep_len} \
+    --min-pr-mz {min_pre_mz} --max-pr-mz {max_pre_mz} \
+    --min-pr-charge {min_pre_z} --max-pr-charge {max_pre_z} \
+    --unimod4 --var-mods 1 --var-mod UniMod:35,15.994915,M --var-mod UniMod:1,42.010565,*n --monitor-mod UniMod:1"
 
-        library_str = ' '.join([f"--lib {lib}" for lib in library_files])
+    # Execute the command
+    subprocess.run(cmd, shell=True, check=True)
 
-        # Build the command to run DIA-NN
-        cmd = f"{dia_nn_exe_path} {library_str} --threads 8 --out {report_file} --sn {sn_ratio} --f {input_file}"
-
-        # Execute the command
-        subprocess.run(cmd, shell=True, check=True)
-
-    return report_files
+    return report_file
 
 
 def get_high_confidence_proteins(report_tsv, fdr_threshold=0.01):
@@ -210,8 +222,6 @@ def run_search(args,direction):
     if raw_files:
         convert_raw_to_mzml(args.input_folder, args.mzml_folder, args.msconvert_path)  # RAW to mzML
 
-    mgf1=generate_spectral_library(args.output_folder, args.output_folder, args.dia_umpire_jar_path) #NEED TO MODIFY FUNCTION TO FILTER FOR ENZYME IN SAMPLE NAME
-    mgf2=generate_spectral_library(args.output_folder, args.output_folder, args.dia_umpire_jar_path) #NEED TO MODIFY FUNCTION TO FILTER FOR ENZYME IN SAMPLE NAME
 
     if direction == "forward":
         ##First Bake/Search (Forward)
@@ -265,13 +275,10 @@ def main():
     parser.add_argument('--mzml_folder',default=os.listdir(),help='Folder containing mzml files')
     parser.add_argument('--output_folder',default=os.listdir(),help='Output Folder')
     parser.add_argument('--fasta_file_path',default="No FASTA File Provided",help='Download FASTA file and provide path')
-    parser.add_argument('--dia-umpire-url', default='https://github.com/diaumpire/DIA-Umpire/releases/download/v2.2/DIA_Umpire_SE.jar', help='Direct download URL for DIA_Umpire_SE.jar from GitHub (default: %(default)s).')
-    parser.add_argument('--dia_umpire_jar_path', default="No file path specified",help="Path to dia_umpire_jar_path")
     parser.add_argument('--dia_nn_exe_path', default="No file path specified",help="Path to dia_nn .exe")
     parser.add_argument('--msconvert_path', default="No file path specified",help="Path to msconvert .exe")
     parser.add_argument('--pull_msconvert', default='N')
     parser.add_argument('--pull_diann', default='N')
-    parser.add_argument('--pull_umpire', default='N')
     #args to perform search
     parser.add_argument('--bake', default='OFF', help="Turn ON if to perform search")
     parser.add_argument('--enzyme1_name', default='Enzyme1',help='User-defined Name for Enzyme1')
@@ -285,21 +292,7 @@ def main():
     parser.add_argument('--sn_ratio', default="1", help='Signal-to-noise ratio threshold for DIA-NN search (default: %(default)s).')   
     args = parser.parse_args()
     ## ENVIROMENT SETUP
-    def setup_environment(args):
-        if args.pull_msconvert == "Y":
-            download_msconvert(args.pytato_folder)
-        if args.pull_umpire == "Y":
-            download_dia_umpire(args.pytato_folder, args.dia_umpire_url)
-        if args.pull_diann == "Y":
-            download_dia_nn(args.pytato_folder, args.dia_nn_url)
-    
-    if args.output_folder == os.listdir():
-        args.output_folder = Path.cwd()
-    
-    if args.bake == "ON": ## EXECUTE SEARCH
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            # Submit the forward and reverse searches to the executor
-            search_results = list(executor.map(run_search, ["forward", "reverse"], [args, args]))
+
 
 if __name__ == '__main__':
     main()
