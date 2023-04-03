@@ -9,7 +9,7 @@ Enzyme2=Thermolysin
 
 ## Features
 
-- Integration with MS-Fragger, DIA-Umpire, DIA-NN, and Percolator
+- Integration with DIA-NN and Percolator
 - Custom Python-based pipeline for streamlined analysis
 - Support for multiple proteases to improve protein identification confidence
 - Generation of theoretical spectra for improved peptide matching
@@ -21,10 +21,9 @@ Enzyme2=Thermolysin
 
 Before using Pytato, you need to download and set up the following external components:
 
-1. **MS-Fragger**: Download from https://github.com/Nesvilab/MSFragger
-2. **DIA-Umpire**: Download from https://github.com/diaumpire/DIA-Umpire
-3. **DIA-NN**: Download from https://github.com/vdemichev/DiaNN
-4. **Percolator**: Download from https://github.com/percolator/percolator
+
+1. **DIA-NN**: Download from https://github.com/vdemichev/DiaNN
+2. **Percolator**: Download from https://github.com/percolator/percolator
 
 Follow the installation instructions provided by each component's respective GitHub page or documentation.
 
