@@ -86,7 +86,6 @@ def generate_spectral_library(dia_nn_exe_path, fasta_file):
     --predictor \
     --fasta \"{fasta_file}\" \
     --fasta-search \
-    --prosit \
     --smart-profiling\
     --peak-center \
     --no-ifs-removal"
@@ -100,45 +99,25 @@ def generate_spectral_library(dia_nn_exe_path, fasta_file):
         print("Spectral library file not found.")
         return ""
     
-def run_dia_nn(dia_nn_exe_path=str(), library_files=list(), fasta_files=list(), input_folder=str(), output_folder=str(),report_file_name=str(), sn_ratio=1.0,qval=0.01, threads=30,missed_cleavages=1,
+def run_dia_nn(dia_nn_exe_path, library_files, fasta_files, input_folder, output_folder,report_file_name="report", sn_ratio=1.0,qval=0.01,threads=30,missed_cleavages=1,
                cut="K*,R*",min_frag_mz=200,max_frag_mz=1800,min_pre_mz=300,max_pre_mz=1200, min_pep_len=7,max_pep_len=30,
                min_pre_z=1,max_pre_z=4):
-    """
-    Runs DIA-NN on a set of .mzML files from a specified input folder using specified parameters.
 
-    Args:
-        dia_nn_exe_path (str): Path to the DIA-NN executable.
-        library_files (list): List of spectral library files (.speclib).
-        fasta_files (list): List of FASTA files (.fasta).
-        input_folder (str): Path to the input folder containing .mzML files.
-        output_folder (str): Path to the output folder where the results will be saved.
-        report_file_name (str): Name of the output report file (without the extension).
-        sn_ratio (float): Signal-to-noise ratio.
-        qval (float): Target q-value.
-        threads (int): Number of threads to use for processing.
-        missed_cleavages (int): Maximum number of missed cleavages allowed.
-        cut (str): Protease cleavage rule.
-        min_frag_mz (int): Minimum fragment m/z.
-        max_frag_mz (int): Maximum fragment m/z.
-        min_pre_mz (int): Minimum precursor m/z.
-        max_pre_mz (int): Maximum precursor m/z.
-        min_pep_len (int): Minimum peptide length.
-        max_pep_len (int): Maximum peptide length.
-        min_pre_z (int): Minimum precursor charge.
-        max_pre_z (int): Maximum precursor charge.
-
-    Returns:
-        str: Path to the generated report file.
-    """
     mzml_files = [f"/{f}" for f in os.listdir(input_folder) if f.lower().endswith('.mzml')]
     os.makedirs(output_folder,exist_ok=True)
     if not mzml_files:
         print("No .mzML files found in the input folder.")
         return []
-
     file_str = ' '.join([f"--lib {fil}" for fil in mzml_files])
+
+    if isinstance(library_files, str):
+        library_files = [library_files]
     library_str = ' '.join([f"--lib {lib}" for lib in library_files])
+
+    if isinstance(fasta_files, str):
+        fasta_files = [fasta_files]
     fasta_str = ' '.join([f"--fasta {fasta}" for fasta in fasta_files])
+
     report_file=f"'{output_folder}/{report_file_name}.tsv'"
 
     cmd = f"{dia_nn_exe_path} \
