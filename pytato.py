@@ -55,6 +55,8 @@ def fasta_to_proteins(fasta_file):
 
     return proteins
 
+
+
 def generate_spectral_library(dia_nn_exe_path, fasta_file):
     """
     Generates a spectral library from a given FASTA file using DIA-NN.
@@ -83,7 +85,11 @@ def generate_spectral_library(dia_nn_exe_path, fasta_file):
     --gen-spec-lib \
     --predictor \
     --fasta \"{fasta_file}\" \
-    --fasta-search"
+    --fasta-search \
+    --prosit \
+    --smart-profiling\
+    --peak-center \
+    --no-ifs-removal"
 
     # Execute the command
     subprocess.run(cmd, shell=True, check=True)
@@ -94,7 +100,7 @@ def generate_spectral_library(dia_nn_exe_path, fasta_file):
         print("Spectral library file not found.")
         return ""
     
-def run_dia_nn(dia_nn_exe_path, library_files=list(), fasta_files=list(), input_folder=str(), output_folder=str(),report_file_name=str(), sn_ratio=1.0,qval=0.01, threads=30,missed_cleavages=1,
+def run_dia_nn(dia_nn_exe_path=str(), library_files=list(), fasta_files=list(), input_folder=str(), output_folder=str(),report_file_name=str(), sn_ratio=1.0,qval=0.01, threads=30,missed_cleavages=1,
                cut="K*,R*",min_frag_mz=200,max_frag_mz=1800,min_pre_mz=300,max_pre_mz=1200, min_pep_len=7,max_pep_len=30,
                min_pre_z=1,max_pre_z=4):
     """

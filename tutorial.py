@@ -11,5 +11,8 @@ diann_path="C:\\DIA-NN\\1.8.1\\diaNN.exe"
 fasta_file="FASTA_HUMAN_Apr2023.fasta"
 
 target_files = [os.path.join(f"{raw_files}", f) for f in os.listdir(f"{raw_files}") if f.lower().endswith(".mzml")]
+library_file_list=[""]
+fasta_file_list=["FASTA_HUMAN_Apr2023.fasta"]
 
-run_dia_nn(diann_path,[""],list(fasta_file)
+run_dia_nn(diann_path,library_file_list,fasta_file_list,
+           raw_files,"03AprTest","Test1")
