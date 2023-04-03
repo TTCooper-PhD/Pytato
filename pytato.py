@@ -94,14 +94,14 @@ def generate_spectral_library(dia_nn_exe_path, fasta_file):
     subprocess.run(cmd, shell=True, check=True)
 
     if os.path.exists(output_file):
-        return list(os.path.abspath(output_file))
+        return os.path.abspath(output_file)
     else:
         print("Spectral library file not found.")
         return ""
     
-def run_dia_nn(dia_nn_exe_path, library_files, fasta_files, input_folder, output_folder,report_file_name="report", sn_ratio=1.0,qval=0.01,threads=30,missed_cleavages=1,
-               cut="K*,R*",min_frag_mz=200,max_frag_mz=1800,min_pre_mz=300,max_pre_mz=1200, min_pep_len=7,max_pep_len=30,
-               min_pre_z=1,max_pre_z=4):
+def run_dia_nn(dia_nn_exe_path, library_files, fasta_files, input_folder, output_folder,report_file_name="report", qval=0.01,threads=30,missed_cleavages=1,
+               cut="K*,R*",min_frag_mz=200,max_frag_mz=1800,min_pre_mz=300,max_pre_mz=1200, min_pep_len=7,max_pep_len=30,ms2_acc=20,ms2_acc_cal=20,ms1_acc=20,
+               min_pre_z=1,max_pre_z=4,fasta_search=False,profiling="smart",MBR=True,fasta_speclib_annotation=False,frag_restrict_quant=True,heuristic_search=True):
 
     mzml_files = [f"/{f}" for f in os.listdir(input_folder) if f.lower().endswith('.mzml')]
     os.makedirs(output_folder,exist_ok=True)
@@ -120,11 +120,44 @@ def run_dia_nn(dia_nn_exe_path, library_files, fasta_files, input_folder, output
 
     report_file=f"'{output_folder}/{report_file_name}.tsv'"
 
+    if fasta_search==True:
+        fasta_search_out="--fasta-search"
+    else:
+        fasta_search_out=""
+    
+    if MBR==True:
+        match_between_runs="--reanalyze"
+    else:
+        match_between_runs=""    
+
+    if fasta_speclib_annotation==True:
+        reannotate="--reannotate"
+    else:
+        reannotate=""   
+
+    if frag_restrict_quant==True:
+        fr_r_quant="--gen-fr-restriction"
+    else:
+        fr_r_quant=""  
+           
+    
+    if heuristic_search==True:
+        relaxed_prot_inf="--relaxed-prot-inf"
+    else:
+        relaxed_prot_inf=""  
+
+    if profiling.lower()=="smart":
+        profiling_out="--smart-profiling"
+    elif profiling.lower()=="rt_profiling":
+        profiling_out=="--rt-profiling"
+    else:
+        profiling_out="--smart-profiling"
+
     cmd = f"{dia_nn_exe_path} \
     {file_str} \
     {library_str}\
     {threads} \
-    --verbose 3 \
+    --verbose 4 \
     --out {report_file} \
     --qvalue {qval} \
     --matrices \
@@ -132,7 +165,7 @@ def run_dia_nn(dia_nn_exe_path, library_files, fasta_files, input_folder, output
     --gen-spec-lib \
     --predictor \
     {fasta_str}\
-    --fasta-search \
+    {fasta_search_out} \
     --min-fr-mz {min_frag_mz} \
     --max-fr-mz {max_frag_mz} \
     --met-excision --cut {cut} \
@@ -140,7 +173,20 @@ def run_dia_nn(dia_nn_exe_path, library_files, fasta_files, input_folder, output
     --min-pep-len {min_pep_len} --max-pep-len {max_pep_len} \
     --min-pr-mz {min_pre_mz} --max-pr-mz {max_pre_mz} \
     --min-pr-charge {min_pre_z} --max-pr-charge {max_pre_z} \
-    --unimod4 --var-mods 1 --var-mod UniMod:35,15.994915,M --var-mod UniMod:1,42.010565,*n --monitor-mod UniMod:1"
+    --mass-acc {ms2_acc} \
+    --mass-acc-cal {ms2_acc_cal}\
+    --mass-acc-ms1 {ms1_acc}\
+    {match_between_runs} \
+    {reannotate}\
+    {fr_r_quant} \
+    --peak-center \
+    {profiling_out} \
+    {heuristic_search} \
+    --no-ifs-removal\
+    --unimod4 \
+    --var-mods 1 \
+    --var-mod UniMod:35,15.994915,M --var-mod UniMod:1,42.010565,*n \
+    --monitor-mod UniMod:1"
 
     # Execute the command
     subprocess.run(cmd, shell=True, check=True)
