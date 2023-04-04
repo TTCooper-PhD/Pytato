@@ -56,4 +56,4 @@ License
 Pytato is released under the Apache License, Version 2.0. Please note that the external components (MS-Fragger, DIA-Umpire, DIA-NN, and Percolator) have their own licenses, which you should review before using them in conjunction with Pytato.
 
 Acknowledgements
-We would like to acknowledge the developers of MS-Fragger, DIA-Umpire, DIA-NN, and Percolator for their valuable contributions to the field of proteomics. Please refer to their respective GitHub repositories and publications for more information.
+We would like to acknowledge the developers of  DIA-NN and Percolator for their valuable contributions to the field of proteomics. Please refer to their respective GitHub repositories and publications for more information.
