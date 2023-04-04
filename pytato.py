@@ -55,7 +55,7 @@ def filter_fasta(input_fasta, output_fasta, uniprot_ids):
         uniprot_ids (list): List of UniProt IDs to keep in the output FASTA file.
 
     Returns:
-        int: Number of sequences written to the output FASTA file.
+        str: Path to Output FASTA
     """
     uniprot_id_pattern = re.compile(r"sp\|(\w+)\|")
 
@@ -72,7 +72,7 @@ def filter_fasta(input_fasta, output_fasta, uniprot_ids):
 
         SeqIO.write(filtered_sequences, out_file, "fasta")
 
-    return len(filtered_sequences)
+    return output_fasta
 
 
 def generate_spectral_library(dia_nn_exe_path, fasta_file):
