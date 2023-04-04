@@ -2,6 +2,9 @@
 
 Pytato is a dual-enzyme proteomics search engine that leverages the information provided by complementary proteolysis to improve peptide and protein identification in data-independent proteomics experiments. 
 
+![logo_small](https://user-images.githubusercontent.com/36017084/229610464-03d73a08-c55e-4e9f-8dec-ac0af352a945.png)
+
+
 ## Experimental Example
 
 Enyzme1=Trypsin
@@ -14,7 +17,6 @@ Enzyme2=Thermolysin
 - Support for multiple proteases to improve protein identification confidence
 - Generation of theoretical spectra for improved peptide matching
 
-![logo_small](https://user-images.githubusercontent.com/36017084/229610464-03d73a08-c55e-4e9f-8dec-ac0af352a945.png)
 
 
 ## Installation
@@ -56,4 +58,4 @@ License
 Pytato is released under the Apache License, Version 2.0. Please note that the external components (MS-Fragger, DIA-Umpire, DIA-NN, and Percolator) have their own licenses, which you should review before using them in conjunction with Pytato.
 
 Acknowledgements
-We would like to acknowledge the developers of MS-Fragger, DIA-Umpire, DIA-NN, and Percolator for their valuable contributions to the field of proteomics. Please refer to their respective GitHub repositories and publications for more information.
+We would like to acknowledge the developers of  DIA-NN and Percolator for their valuable contributions to the field of proteomics. Please refer to their respective GitHub repositories and publications for more information.
