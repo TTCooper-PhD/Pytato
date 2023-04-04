@@ -1,4 +1,5 @@
 from pytato import *
+
 dia_nn_exe_path="C:\\DIA-NN\\1.8.1\\diaNN.exe"
 msconvert_path="C:\Program Files\ProteoWizard\ProteoWizard 3.0.23\msconvert"
 #Step 1:
@@ -20,9 +21,7 @@ run_dia_nn(dia_nn_exe_path, library_files, fasta_files, input_folder, output_fol
                min_pre_z=1,max_pre_z=4,fasta_search=False,profiling="smart",MBR=True,fasta_speclib_annotation=False,frag_restrict_quant=True)
 #Filter for "High Confidence" Protein IDs to generate a focused FASTA file for
 firstbake_proteins=get_high_confidence_proteins()
-fake_list=get_first_n_protein_ids(fasta_file,n=2)
-print(fake_list)
-firstbake_fasta=filter_fasta_by_proteins(fasta_file,fake_list,"Test.fasta")
+firstbake_fasta=filter_fasta(fasta_file,"Test.fasta",firstbake_proteins)
 #Search_Enzyme2_withEnzyme1_Library
 run_dia_nn(dia_nn_exe_path, library_files, firstbake_fasta, input_folder, output_folder,report_file_name=report_file_name, qval=0.5,threads=30,missed_cleavages=2,
                cut="*F,*M,*V,*A,*I,*L",min_frag_mz=200,max_frag_mz=1800,min_pre_mz=300,max_pre_mz=1200, min_pep_len=7,max_pep_len=30,

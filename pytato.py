@@ -43,53 +43,36 @@ def convert_raw_to_mzml(input_folder, msconvert_path, output_subfolder="mzML"):
 
     return output_folder
 
-def get_first_n_protein_ids(fasta_file, n=2):
+
+
+def filter_fasta(input_fasta, output_fasta, uniprot_ids):
     """
-    Returns the first n protein IDs from a given FASTA file.
+    Filters a FASTA file to include only sequences with the specified UniProt IDs.
 
     Args:
-        fasta_file (str): Path to the FASTA file.
-        n (int): Number of protein IDs to retrieve.
+        input_fasta (str): Path to the input FASTA file.
+        output_fasta (str): Path to the output filtered FASTA file.
+        uniprot_ids (list): List of UniProt IDs to keep in the output FASTA file.
 
     Returns:
-        list: A list of protein IDs.
+        int: Number of sequences written to the output FASTA file.
     """
-    records = list(SeqIO.parse(fasta_file, "fasta"))
-    protein_ids = [record.id for record in records[:n]]
-    return protein_ids
+    uniprot_id_pattern = re.compile(r"sp\|(\w+)\|")
 
-def fasta_to_proteins(fasta_file):
-    with open(fasta_file, 'r') as file_handle:
-        content = file_handle.read()
+    with open(input_fasta, "r") as in_file, open(output_fasta, "w") as out_file:
+        fasta_sequences = SeqIO.parse(in_file, "fasta")
+        filtered_sequences = []
 
-    proteins = []
-    fasta_entries = content.split('>')[1:]  # Remove the first empty entry
-    for entry in fasta_entries:
-        lines = entry.strip().split('\n')
-        header, sequence = lines[0], ''.join(lines[1:])
-        proteins.append(sequence)
+        for seq in fasta_sequences:
+            match = uniprot_id_pattern.search(seq.description)
+            if match:
+                uniprot_id = match.group(1)
+                if uniprot_id in uniprot_ids:
+                    filtered_sequences.append(seq)
 
-    return proteins
+        SeqIO.write(filtered_sequences, out_file, "fasta")
 
-def filter_fasta_by_proteins(fasta_file, protein_ids, output_file):
-    """
-    Creates a new FASTA file containing only the proteins specified in the protein_ids list.
-
-    Args:
-        fasta_file (str): Path to the input FASTA file.
-        protein_ids (list): List of protein IDs to include in the output FASTA file.
-        output_file (str): Path to the output FASTA file.
-
-    Returns:
-        str: Path to the generated FASTA file.
-    """
-    protein_ids_set = set(protein_ids)
-    records = list(SeqIO.parse(fasta_file, "fasta"))
-    filtered_records = [record for record in records if record.id in protein_ids_set]
-    SeqIO.write(filtered_records, output_file, "fasta")
-
-    return output_file
-
+    return len(filtered_sequences)
 
 
 def generate_spectral_library(dia_nn_exe_path, fasta_file):
