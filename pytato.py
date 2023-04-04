@@ -38,7 +38,7 @@ def convert_raw_to_mzml(input_folder, msconvert_path, output_subfolder="mzML"):
     for raw_file in raw_files:
         input_file = os.path.join(input_folder, raw_file)
         print(f"Converting {input_file} to mzML...")
-        cmd = f"\"{msconvert_path}\" {input_file} -o {output_folder} --mzML --filter \"peakPicking vendor msLevel=1\" --filter \"zeroSamples removeExtra\""
+        cmd = f"\"{msconvert_path}\" {input_file} -o {output_folder} --mzML --filter \"peakPicking vendor msLevel=1\" --filter \"zeroSamples removeExtra 1\" --filter \"demultiplex optimization=overlap massError=10ppm\""
         subprocess.run(cmd, shell=True, check=True)
 
     return output_folder
@@ -256,41 +256,8 @@ def run_search(args,direction):
 
 
     if direction == "forward":
-        ##First Bake/Search (Forward)
-        total_proteins=fasta_to_proteins(args.fasta_file_path) #pull down proteins from FASTA file
-        peptide_generator = generate_digested_peptides(args.fasta_file_path, total_proteins, args.enzyme1_rule) #generate peptides from total_proteins using enzyme1
-        spectra1=generate_theoretical_spectra(peptide_generator) #generate theoretical spectrum with peptides        
-        results=run_dia_nn(mgf1, spectra1, args.output_folder, args.dia_nn_exe_path) #run DIA-NN using mgf files (Group1)
-        confidence_threshold1 = int(args.confidence_lvl_1) #Determin Q-value threshold
-        high_conf_proteins=[] #Collect Proteins Identified with High Confidence (e.g. FDR=0.01)
-        for result in results:
-            #Collect Proteins Identified with High Confidence from Each Sample Analyzed
-            highcon_pro = get_high_confidence_proteins(result, confidence_threshold1)
-            high_conf_proteins.append(highcon_pro)
-        high_conf_proteins=list(set(high_conf_proteins))
-        ##Second Bake/Search (Forward)
-        peptide_generator = generate_digested_peptides(args.fasta_file_path, high_conf_proteins, args.enzyme2_rule) #Use list of high-confidence proteins from first search to refine theoretical peptides for 2nd search
-        spectra2=generate_theoretical_spectra(peptide_generator, output_file=f"{args.enzyme2_name}_spectra.tsv") #Generare theoretical spectra library
-        output_fwd=f"{args.output}/Output_{args.enzyme2_name}"
-        results=run_dia_nn(mgf2, spectra2, args.output_folder, args.dia_nn_exe_path) #Run DIA-NN
 
     elif direction == "reverse":
-        #First Search (Reverse)
-        peptide_generator = generate_digested_peptides(args.fasta_file_path, total_proteins, args.enzyme2_rule) #generate peptides from total_proteins using enzyme1
-        spectra1=generate_theoretical_spectra(peptide_generator) #generate theoretical spectrum with peptides        
-        results=run_dia_nn(mgf2, spectra1, args.output_folder, args.dia_nn_exe_path) #run DIA-NN using mgf files (Group1)
-        confidence_threshold1 = int(args.confidence_lvl_1) #Determin Q-value threshold
-        high_conf_proteins=[] #Collect Proteins Identified with High Confidence (e.g. FDR=0.01)
-        for result in results:
-            #Collect Proteins Identified with High Confidence from Each Sample Analyzed
-            highcon_pro = get_high_confidence_proteins(result, confidence_threshold1)
-            high_conf_proteins.append(highcon_pro)
-
-        #Second Search (Reverse)
-        peptide_generator = generate_digested_peptides(args.fasta_file_path, high_conf_proteins, args.enzyme1_rule) #Use list of high-confidence proteins from first search to refine theoretical peptides for 2nd search
-        spectra2=generate_theoretical_spectra(peptide_generator, output_file=f"{args.enzyme1_name}_spectra.tsv") #Generare theoretical spectra library
-        output_rev=f"{args.output}/Output_{args.enzyme1_name}"
-        results=run_dia_nn(mgf1, spectra2, output_rev, args.dia_nn_exe_path) #Run DIA-NN
 
     else:
         raise ValueError("Invalid search direction.")
@@ -309,8 +276,6 @@ def main():
     parser.add_argument('--fasta_file_path',default="No FASTA File Provided",help='Download FASTA file and provide path')
     parser.add_argument('--dia_nn_exe_path', default="No file path specified",help="Path to dia_nn .exe")
     parser.add_argument('--msconvert_path', default="No file path specified",help="Path to msconvert .exe")
-    parser.add_argument('--pull_msconvert', default='N')
-    parser.add_argument('--pull_diann', default='N')
     #args to perform search
     parser.add_argument('--bake', default='OFF', help="Turn ON if to perform search")
     parser.add_argument('--enzyme1_name', default='Enzyme1',help='User-defined Name for Enzyme1')
