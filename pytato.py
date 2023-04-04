@@ -1,12 +1,14 @@
 #Pytato 2023 
 
 import argparse
+from Bio import SeqIO
 from concurrent.futures import ThreadPoolExecutor
 import csv
 import os
 import pandas as pd
 from pathlib import Path
 from pyteomics import parser,fasta,mass, mgf,auxiliary
+import re
 import shutil
 import subprocess
 from support import *
@@ -41,6 +43,20 @@ def convert_raw_to_mzml(input_folder, msconvert_path, output_subfolder="mzML"):
 
     return output_folder
 
+def get_first_n_protein_ids(fasta_file, n=2):
+    """
+    Returns the first n protein IDs from a given FASTA file.
+
+    Args:
+        fasta_file (str): Path to the FASTA file.
+        n (int): Number of protein IDs to retrieve.
+
+    Returns:
+        list: A list of protein IDs.
+    """
+    records = list(SeqIO.parse(fasta_file, "fasta"))
+    protein_ids = [record.id for record in records[:n]]
+    return protein_ids
 
 def fasta_to_proteins(fasta_file):
     with open(fasta_file, 'r') as file_handle:
@@ -54,6 +70,25 @@ def fasta_to_proteins(fasta_file):
         proteins.append(sequence)
 
     return proteins
+
+def filter_fasta_by_proteins(fasta_file, protein_ids, output_file):
+    """
+    Creates a new FASTA file containing only the proteins specified in the protein_ids list.
+
+    Args:
+        fasta_file (str): Path to the input FASTA file.
+        protein_ids (list): List of protein IDs to include in the output FASTA file.
+        output_file (str): Path to the output FASTA file.
+
+    Returns:
+        str: Path to the generated FASTA file.
+    """
+    protein_ids_set = set(protein_ids)
+    records = list(SeqIO.parse(fasta_file, "fasta"))
+    filtered_records = [record for record in records if record.id in protein_ids_set]
+    SeqIO.write(filtered_records, output_file, "fasta")
+
+    return output_file
 
 
 
@@ -204,27 +239,6 @@ def get_high_confidence_proteins(report_tsv, fdr_threshold=0.01):
     return set(high_conf_proteins)
 
 
-def generate_digested_peptides(fasta_file, proteins, cleavage_rule):
-    fasta_proteins = fasta_to_proteins(fasta_file)
-    for protein_id, protein_seq in fasta_proteins.items():
-        if protein_id in proteins:
-            peptides = parser.cleave(protein_seq, cleavage_rule)
-            for peptide in peptides:
-                yield peptide
-
-def generate_theoretical_spectra(peptides, charge_range=(1, 3), output_file="theoretical_spectra.tsv"):
-    with open(output_file, 'w', newline='') as f:
-        writer = csv.writer(f, delimiter='\t')
-        writer.writerow(['Peptide', 'Charge', 'IonType', 'IonNumber', 'mz'])
-
-        for peptide in peptides:
-            for charge in range(charge_range[0], charge_range[1] + 1):
-                spectrum = mass.generate_spectrum(peptide, charge=charge, ion_types=('b', 'y'))
-                for ion_type, ion_series in spectrum.items():
-                    for ion_number, mz in enumerate(ion_series, start=1):
-                        writer.writerow([peptide, charge, ion_type, ion_number, mz])
-    
-    return output_file
 
 def concatenate_results(results_1, enzyme1_name, results_2, enzyme2_name):
     # Read search results as dataframes
