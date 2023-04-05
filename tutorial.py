@@ -21,38 +21,39 @@ fasta_files="FASTA_HUMAN_Apr2023.fasta"
 cut="K*,R*"
 cut2="*F,*M,*V,*A,*I,*L"
 
-#Enzyme1_Library-Free
+
+#Enzyme1_Library-Free (1st Bake)
 run_dia_nn(dia_nn_exe_path, library_files, fasta_files, enzyme1_folder, output_folder,report_file_name=report_file_name1, qval=0.01,threads=30,missed_cleavages=1,
                cut="K*,R*",min_frag_mz=200,max_frag_mz=1800,min_pre_mz=300,max_pre_mz=1200, min_pep_len=7,max_pep_len=30,ms2_acc=20,ms2_acc_cal=20,ms1_acc=20,
-               min_pre_z=1,max_pre_z=4,fasta_search=True,profiling="smart",MBR=True,fasta_speclib_annotation=False,frag_restrict_quant=True,heuristic_search=True)
+               min_pre_z=1,max_pre_z=4,fasta_search=True,profiling="smart",MBR=True,fasta_speclib_annotation=True,frag_restrict_quant=True,heuristic_search=True)
+               
 #Filter for "High Confidence" Protein IDs to generate a targeted FASTA file for "2nd Bake"
-firstbake_proteins=get_high_confidence_proteins("Apr03_FirstBake\FirstBake_3Apr2023.tsv",fdr_threshold=0.01)
+firstbake_report=f"{output_folder}\{report_file_name1}.tsv"
+firstbake_proteins=get_high_confidence_proteins(firstbake_report,fdr_threshold=0.01)
 print(f"Identified {len(firstbake_proteins)} High-confidence proteins in First Bake (Enzyme1)....")
 firstbake_fasta_name="Targeted_Enzyme1.fasta"
 firstbake_fasta=filter_fasta(fasta_file,firstbake_fasta_name,firstbake_proteins)
 
-
-
-#Enzyme2_Library-Free
+#Enzyme2_Library-Free (2nd Bake)
 run_dia_nn(dia_nn_exe_path, library_files, fasta_files, enzyme2_file_path, output_folder,report_file_name=report_file_name2, qval=0.01,threads=30,missed_cleavages=1,
                cut="K*,R*",min_frag_mz=200,max_frag_mz=1800,min_pre_mz=300,max_pre_mz=1200, min_pep_len=7,max_pep_len=30,ms2_acc=20,ms2_acc_cal=20,ms1_acc=20,
-               min_pre_z=1,max_pre_z=4,fasta_search=True,profiling="smart",MBR=True,fasta_speclib_annotation=False,frag_restrict_quant=True,heuristic_search=True)
+               min_pre_z=1,max_pre_z=4,fasta_search=True,profiling="smart",MBR=True,fasta_speclib_annotation=True,frag_restrict_quant=True,heuristic_search=True)
 #Filter for "High Confidence" Protein IDs to generate a targeted FASTA file for "2nd Bake"
-secondbake_proteins=get_high_confidence_proteins("Apr03_FirstBake\FirstBake_3Apr2023.tsv",fdr_threshold=0.01)
+secondbake_report=f"{output_folder}\{report_file_name1}.tsv"
+secondbake_proteins=get_high_confidence_proteins(secondbake_report,fdr_threshold=0.01)
 print(f"Identified {len(secondbake_proteins)} High-confidence proteins in First Bake (Enzyme2)....")
 secondbake_fasta_name="Targeted_Enzyme2.fasta"
 secondbake_fasta=filter_fasta(fasta_file,secondbake_fasta_name,secondbake_proteins)
 
 
-
-#Step 3: Second Bake
-report_file_name1="targeted_enzyme1"
-
+#Step 3: Targeted Searches
+report_file_name1="targeted_enzyme1" #Use High-Confidence Proteins (Enzyme2) to "Mine" Spectra of Enzyme1 with low qval and high ppm 
+fistbake_library=
 run_dia_nn(dia_nn_exe_path, library_files, firstbake_fasta, enzyme2_file_path, output_folder,report_file_name=report_file_name1, qval=0.1,threads=30,missed_cleavages=2,
-               cut="K*,R*",min_frag_mz=200,max_frag_mz=1800,min_pre_mz=300,max_pre_mz=1200, min_pep_len=7,max_pep_len=30,
-               min_pre_z=1,max_pre_z=4,fasta_search=True,profiling="smart",MBR=True,fasta_speclib_annotation=False,frag_restrict_quant=True)
+               cut=cut,min_frag_mz=200,max_frag_mz=1800,min_pre_mz=300,max_pre_mz=1200, min_pep_len=7,max_pep_len=30,
+               min_pre_z=1,max_pre_z=4,fasta_search=False,profiling="smart",MBR=True,fasta_speclib_annotation=False,frag_restrict_quant=True)
 
-report_file_name2="targeted_enzyme1"
+report_file_name2="targeted_enzyme2" #Use High-Confidence Proteins to "Mine" Spectra of Enzyme2 with low qval and high ppm 
 run_dia_nn(dia_nn_exe_path, library_files, firstbake_fasta, enzyme2_file_path, output_folder,report_file_name=report_file_name2, qval=0.1,threads=30,missed_cleavages=2,
-               cut="K*,R*",min_frag_mz=200,max_frag_mz=1800,min_pre_mz=300,max_pre_mz=1200, min_pep_len=,max_pep_len=30,
-               min_pre_z=1,max_pre_z=4,fasta_search=True,profiling="smart",MBR=True,fasta_speclib_annotation=False,frag_restrict_quant=True)
+               cut=cut2 ,min_frag_mz=200,max_frag_mz=1800,min_pre_mz=300,max_pre_mz=1200, min_pep_len=,max_pep_len=30,
+               min_pre_z=1,max_pre_z=4,fasta_search=False,profiling="smart",MBR=True,fasta_speclib_annotation=False,frag_restrict_quant=True)

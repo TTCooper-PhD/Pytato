@@ -182,7 +182,7 @@ def run_dia_nn(dia_nn_exe_path, library_files, fasta_files, input_folder, output
     --out {report_file} \
     --qvalue {qval} \
     --matrices \
-    --out-lib {report_file_name}-lib.tsv \
+    --out-lib {output_folder}/{report_file_name}-lib.tsv \
     --gen-spec-lib \
     --predictor \
     {fasta_str}\
