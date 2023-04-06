@@ -38,7 +38,7 @@ def convert_raw_to_mzml(input_folder, msconvert_path, output_subfolder="mzML"):
     for raw_file in raw_files:
         input_file = os.path.join(input_folder, raw_file)
         print(f"Converting {input_file} to mzML...")
-        cmd = f"\"{msconvert_path}\" {input_file} -o {output_folder} --mzML --filter \"peakPicking vendor msLevel=1\" --filter \"zeroSamples removeExtra 1\" --filter \"demultiplex optimization=overlap massError=10ppm\""
+        cmd = f"\"{msconvert_path}\" {input_file} -o {output_folder} --mzML --filter \"peakPicking vendor msLevel=1\" --filter \"zeroSamples removeExtra 1\" --filter \"demultiplex minWindowSize=2 massError=10.0ppm\""
         subprocess.run(cmd, shell=True, check=True)
 
     return output_folder
@@ -124,7 +124,7 @@ def run_dia_nn(dia_nn_exe_path, library_files, fasta_files, input_folder, output
                cut="K*,R*",min_frag_mz=200,max_frag_mz=1800,min_pre_mz=300,max_pre_mz=1200, min_pep_len=7,max_pep_len=30,ms2_acc=20,ms2_acc_cal=20,ms1_acc=20,
                min_pre_z=1,max_pre_z=4,fasta_search=False,profiling="smart",MBR=True,fasta_speclib_annotation=False,frag_restrict_quant=True,heuristic_search=True):
 
-    mzml_files = [f"{f}" for f in os.listdir(input_folder) if f.lower().endswith('.mzml')]
+    mzml_files = [f"{input_folder}/{f}" for f in os.listdir(input_folder) if f.lower().endswith('.mzml')]
     os.makedirs(output_folder,exist_ok=True)
     if not mzml_files:
         print("No .mzML files found in the input folder.")
@@ -256,8 +256,10 @@ def run_search(args,direction):
 
 
     if direction == "forward":
+        pass
 
     elif direction == "reverse":
+        pass
 
     else:
         raise ValueError("Invalid search direction.")
