@@ -12,7 +12,6 @@ Enzyme2=Thermolysin
 
 ## Features
 
-- Integration with DIA-NN and Percolator
 - Custom Python-based pipeline for streamlined analysis
 - Support for multiple proteases to improve protein identification confidence
 - Generation of theoretical spectra for improved peptide matching
@@ -20,16 +19,6 @@ Enzyme2=Thermolysin
 
 
 ## Installation
-
-Before using Pytato, you need to download and set up the following external components:
-
-
-1. **DIA-NN**: Download from https://github.com/vdemichev/DiaNN
-2. **Percolator**: Download from https://github.com/percolator/percolator
-
-Follow the installation instructions provided by each component's respective GitHub page or documentation.
-
-Next, clone the Pytato repository:
 
 ```bash
 git clone https://github.com/TTCooper-PhD/Pytato.git
@@ -51,11 +40,19 @@ pip install -r requirements.txt
 ```bash
 python pytato.py --enzyme1_data trypsin_data.mzML --enzyme2_data thermolysin_data.mzML  --output output_directory
 ```
+## Output
+Pytato generates multiple output files containing the results of the analysis. (Add specific details about the output files here).
 
-For detailed usage instructions and available options, refer to the documentation.
+## Examples
+(Provide a detailed example command with input and expected output)
 
-License
-Pytato is released under the Apache License, Version 2.0. Please note that the external components (MS-Fragger, DIA-Umpire, DIA-NN, and Percolator) have their own licenses, which you should review before using them in conjunction with Pytato.
+## Contribution
+We welcome contributions to the Pytato project. Please see our contribution guidelines for more details.
 
-Acknowledgements
-We would like to acknowledge the developers of  DIA-NN and Percolator for their valuable contributions to the field of proteomics. Please refer to their respective GitHub repositories and publications for more information.
+## License
+(Provide details about the project's license)
+
+## Contact
+For questions or feedback, please contact us at (Your contact info).
+
+
