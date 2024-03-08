@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="PytatoDIA",
-    version="0.2",
+    version="0.3.2",
     author="Tyler T. Cooper,Ph.D.",
     author_email="tcoope2@gmail.com",
     description="A Toolbox for Proteomic Analyses and Data Visualization",
@@ -17,8 +17,7 @@ setup(
     ],
     python_requires='>=3.6',
     install_requires=[
-        "pandas>=1.1.5",
-        "numpy>=1.19.5",
+
         "matplotlib>=3.3.4",
         "seaborn>=0.11.1",
         "scipy>=1.5.4",
