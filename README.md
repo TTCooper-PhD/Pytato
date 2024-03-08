@@ -1,4 +1,4 @@
-# Pytato: A Dual-Enzyme Search Engine for DIA Proteomics
+# Pytato: A Toolbox for for DIA Proteomics
 
 Pytato is a dual-enzyme proteomics search engine that leverages the information provided by complementary proteolysis to improve peptide and protein identification in data-independent proteomics experiments. 
 
