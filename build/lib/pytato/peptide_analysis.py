@@ -212,7 +212,7 @@ class Silico:
                         'peptide': peptide,
                         'Length': len(peptide),
                         'aa_comp': Scales.peptide_inspector(peptide), 
-                        'z': Scales.z_neutral_ph(peptide),  
+                        'z': Scales.z_neutral_ph(peptide, pH=pH),  
                         'Mass': Scales.calculate_mass(peptide), 
                         'GRAVY':Scales.peptide_gravy(peptide)
                     }

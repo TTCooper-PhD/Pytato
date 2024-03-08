@@ -1,0 +1,15 @@
+LICENSE
+README.md
+setup.py
+PytatoDIA.egg-info/PKG-INFO
+PytatoDIA.egg-info/SOURCES.txt
+PytatoDIA.egg-info/dependency_links.txt
+PytatoDIA.egg-info/requires.txt
+PytatoDIA.egg-info/top_level.txt
+gui/__init__.py
+pytato/__init__.py
+pytato/exploration.py
+pytato/machine_learning.py
+pytato/peptide_analysis.py
+pytato/pytato.py
+pytato/vizuals.py
