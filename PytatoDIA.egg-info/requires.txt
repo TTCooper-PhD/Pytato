@@ -3,3 +3,7 @@ seaborn>=0.11.1
 scipy>=1.5.4
 biopython>=1.78
 requests>=2.25.1
+pandas>=1.2.0
+numpy>=1.19.0
+logomaker>=0.8
+pyteomics>=4.5

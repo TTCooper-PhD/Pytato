@@ -17,6 +17,7 @@ import itertools as it
 
 class Silico:
     def __init__(self):
+        self.pH=2.0
         self.missed = 0
         self.min_len = 6
         self.max_len = 100
@@ -178,7 +179,7 @@ class Silico:
 
         return filtered_df
 
-    def generate_samples(self, df, target="Peptide", identifier="Gene", enzyme=None, min_length=7, exception=None, max_length=100, pH=2.0, min_charge=2.0):
+    def generate_samples(self, df, target="Peptide", identifier="Gene", enzyme=None, min_length=7, exception=None, max_length=100, pH=None, min_charge=2.0):
         """
         Generate artificial datasets based on enzymatic digestion rules and analyze peptide properties.
 
@@ -198,6 +199,7 @@ class Silico:
         """
         peptide_properties = []
         enzyme = enzyme if enzyme else self.enzyme
+        pH = pH if pH else self.pH
         print(f'Processing your order with {enzyme}-cut proteins.')
 
         for index, row in df.iterrows():
@@ -212,8 +214,9 @@ class Silico:
                         'peptide': peptide,
                         'Length': len(peptide),
                         'aa_comp': Scales.peptide_inspector(peptide), 
-                        'z': Scales.z_neutral_ph(peptide),  
-                        'Mass': Scales.calculate_mass(peptide), 
+                        'neutral_z': Scales.z_neutral_ph(peptide),
+                        'z':Scales.calculate_peptide_charge(peptide,pH), 
+                        'Mass': Scales.calculate_mass(peptide,), 
                         'GRAVY':Scales.peptide_gravy(peptide)
                     }
 
@@ -263,6 +266,15 @@ class Silico:
 
         return flanking_sequences
     
+    def Pep2Pro(self, protein, peptides):
+        protein = re.sub(r'[^A-Z]', '', protein)
+        mask = np.zeros(len(protein), dtype=np.int8)
+        for peptide in peptides:
+            indices = [m.start() for m in re.finditer(
+                '(?={})'.format(re.sub(r'[^A-Z]', '', peptide)), protein)]
+            for i in indices:
+                mask[i:i + len(peptide)] = 1
+        return mask.sum(dtype=np.float) / mask.size
 
 class Scales:
     # Base masses for the amino acids
@@ -480,6 +492,43 @@ class Scales:
 
         # Calculate net charge
         return sum(z_dict.get(aa, 0) for aa in peptide)
+    
+    @staticmethod
+    def calculate_peptide_charge(peptide, pH):
+        # pKa values for the N-terminus, C-terminus, and side chains of ionizable amino acids
+        pKa = {
+            'N_term': 9.69,
+            'C_term': 2.34,
+            'K': 10.4,
+            'R': 12.5,
+            'H': 6.0,
+            'D': 3.9,
+            'E': 4.1,
+            'C': 8.3,
+            'Y': 10.1,
+        }
+
+        # Charge contributions by amino acid at the given pH
+        charge = {
+            'N_term': 1 / (1 + pow(10, pH - pKa['N_term'])),
+            'C_term': -1 / (1 + pow(10, pKa['C_term'] - pH)),
+            'K': 1 / (1 + pow(10, pH - pKa['K'])),
+            'R': 1 / (1 + pow(10, pH - pKa['R'])),
+            'H': 1 / (1 + pow(10, pH - pKa['H'])),
+            'D': -1 / (1 + pow(10, pKa['D'] - pH)),
+            'E': -1 / (1 + pow(10, pKa['E'] - pH)),
+            'C': -1 / (1 + pow(10, pKa['C'] - pH)),
+            'Y': -1 / (1 + pow(10, pKa['Y'] - pH)),
+        }
+
+        # Calculate the net charge
+        net_charge = charge['N_term'] + charge['C_term']
+        for aa in peptide:
+            if aa in charge:
+                net_charge += charge[aa]
+
+        return round(net_charge)
+
 
     @staticmethod
     def peptide_gravy(peptide: str, modifications: dict = None) -> float:

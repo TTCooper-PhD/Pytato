@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: PytatoDIA
-Version: 0.3.2
+Version: 0.3.6
 Summary: A Toolbox for Proteomic Analyses and Data Visualization
 Home-page: https://github.com/TTCooper-PhD/Pytato
 Author: Tyler T. Cooper,Ph.D.
@@ -11,8 +11,17 @@ Classifier: Operating System :: OS Independent
 Requires-Python: >=3.6
 Description-Content-Type: text/markdown
 License-File: LICENSE
+Requires-Dist: matplotlib>=3.3.4
+Requires-Dist: seaborn>=0.11.1
+Requires-Dist: scipy>=1.5.4
+Requires-Dist: biopython>=1.78
+Requires-Dist: requests>=2.25.1
+Requires-Dist: pandas>=1.2.0
+Requires-Dist: numpy>=1.19.0
+Requires-Dist: logomaker>=0.8
+Requires-Dist: pyteomics>=4.5
 
-# Pytato: A Dual-Enzyme Search Engine for DIA Proteomics
+# Pytato: A Toolbox for for DIA Proteomics
 
 Pytato is a dual-enzyme proteomics search engine that leverages the information provided by complementary proteolysis to improve peptide and protein identification in data-independent proteomics experiments. 
 
