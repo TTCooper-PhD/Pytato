@@ -8,7 +8,6 @@ PytatoDIA.egg-info/requires.txt
 PytatoDIA.egg-info/top_level.txt
 gui/__init__.py
 pytato/__init__.py
-pytato/peptide_analysis.py
 pytato/analysis/__init__.py
 pytato/analysis/peptide.py
 pytato/analysis/protein.py
@@ -18,4 +17,3 @@ pytato/core/scales.py
 pytato/core/silico.py
 pytato/viz/__init__.py
 pytato/viz/plots.py
-pytato/viz/vizuals.py

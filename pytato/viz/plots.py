@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import logomaker
+import pandas as pd
 
 class Plots:
     """
@@ -35,3 +36,14 @@ class Plots:
         logo.ax.set_ylabel('probability', fontsize=12)
         
         return logo 
+    
+    @staticmethod
+
+    def petide_hex(data,char1="m/z",char2="GRAVY",figsize=(5,4),color="#4CB391"):
+        plt.figure(figsize=figsize)
+        x=data[char1]
+        y=data[char2]
+        sns.jointplot(x,y,kind="hex",color=color)
+        plt.show()
+
+        
