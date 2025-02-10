@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="PytatoDIA",
-    version="0.4.1",
+    version="0.5.3",
     author="Tyler T. Cooper,Ph.D.",
     author_email="tcoope2@gmail.com",
     description="A Toolbox for Proteomic Analyses and Data Visualization",

@@ -1,6 +1,6 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.2
 Name: PytatoDIA
-Version: 0.4.1
+Version: 0.5.3
 Summary: A Toolbox for Proteomic Analyses and Data Visualization
 Home-page: https://github.com/TTCooper-PhD/Pytato
 Author: Tyler T. Cooper,Ph.D.
@@ -20,6 +20,15 @@ Requires-Dist: pandas>=1.2.0
 Requires-Dist: numpy>=1.19.0
 Requires-Dist: logomaker>=0.8
 Requires-Dist: pyteomics>=4.5
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
 
 # Pytato: A Toolbox for for DIA Proteomics
 

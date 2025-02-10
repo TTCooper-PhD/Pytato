@@ -39,11 +39,21 @@ class Plots:
     
     @staticmethod
 
-    def petide_hex(data,char1="m/z",char2="GRAVY",figsize=(5,4),color="#4CB391"):
+    def peptide_hex(data,char1="m/z",char2="GRAVY",figsize=(5,4),color="#4CB391"):
         plt.figure(figsize=figsize)
         x=data[char1]
         y=data[char2]
-        sns.jointplot(x,y,kind="hex",color=color)
+        plt.figure(figsize=figsize)
+        sns.jointplot(x=x,y=y,kind="hex",color=color)
         plt.show()
 
-        
+    @staticmethod
+    def double_kde(dataframe1,dataframe2, selected_column='z', label1='Unmodified', label2='Modified',common_norm=True,figsize=(8,5)):
+        plt.figure(figsize=figsize)
+        sns.kdeplot(data=dataframe1, x=selected_column, label=label1, common_norm=common_norm)
+        sns.kdeplot(data=dataframe2, x=selected_column, label=label2, common_norm=common_norm)
+        plt.xlabel(selected_column)
+        plt.ylabel('Density')
+        plt.title(f'Distribution of {selected_column} Values: {label1} vs {label2}')
+        plt.legend()
+        plt.show()

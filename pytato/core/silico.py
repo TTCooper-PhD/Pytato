@@ -4,6 +4,10 @@ import gzip
 from io import StringIO
 import pandas as pd
 import re
+from collections import deque
+import itertools as it
+from collections import deque
+from itertools import combinations
 from pytato.core.scales import Scales
 
 class Silico:
@@ -192,7 +196,8 @@ class Silico:
         peptide_properties = []
         enzyme = enzyme if enzyme else self.enzyme
         pH = pH if pH else self.pH
-        print(f'Processing your order with {enzyme}-cut proteins.')
+        print(f'Proteolysis using {enzyme} underway.')
+        print(f'Generating peptides...')
 
         for index, row in df.iterrows():
             gene = row[identifier]
@@ -259,6 +264,9 @@ class Silico:
         return flanking_sequences
     
     def Pep2Pro(self, protein, peptides):
+        '''
+        
+        '''
         protein = re.sub(r'[^A-Z]', '', protein)
         mask = np.zeros(len(protein), dtype=np.int8)
         for peptide in peptides:

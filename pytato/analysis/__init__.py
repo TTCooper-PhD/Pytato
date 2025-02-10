@@ -1,2 +1,2 @@
-from .peptide import PeptideAnalysis
-from .protein import ProteinAnalysis 
+from .peptide import Peptide
+from .protein import Protein 

@@ -1,7 +1,7 @@
 import numpy as np
 import re
 
-class ProteinAnalysis:
+class Protein:
     """
     Methods for protein-level analysis
     """
