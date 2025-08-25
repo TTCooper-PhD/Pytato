@@ -3,6 +3,7 @@ import requests
 import gzip
 from io import StringIO
 import pandas as pd
+import numpy as np 
 import re
 from collections import deque
 import itertools as it
@@ -214,7 +215,8 @@ class Silico:
                         'neutral_z': Scales.z_neutral_ph(peptide),
                         'z':Scales.calculate_peptide_charge(peptide,pH), 
                         'Mass': Scales.calculate_mass(peptide,), 
-                        'GRAVY':Scales.peptide_gravy(peptide)
+                        'GRAVY':Scales.peptide_gravy(peptide),
+                        'IPC':Scales.peptide_ipc(peptide)
                     }
 
                     if properties["z"] >= min_charge:
@@ -265,7 +267,7 @@ class Silico:
     
     def Pep2Pro(self, protein, peptides):
         '''
-        
+        Calculate the coverage of a protein by a list of peptides.
         '''
         protein = re.sub(r'[^A-Z]', '', protein)
         mask = np.zeros(len(protein), dtype=np.int8)
@@ -274,4 +276,4 @@ class Silico:
                 '(?={})'.format(re.sub(r'[^A-Z]', '', peptide)), protein)]
             for i in indices:
                 mask[i:i + len(peptide)] = 1
-        return mask.sum / mask.size
+        return float(mask.sum()) / float(mask.size)

@@ -1,6 +1,6 @@
-Metadata-Version: 2.2
+Metadata-Version: 2.4
 Name: PytatoDIA
-Version: 0.5.3
+Version: 0.6.0
 Summary: A Toolbox for Proteomic Analyses and Data Visualization
 Home-page: https://github.com/TTCooper-PhD/Pytato
 Author: Tyler T. Cooper,Ph.D.
@@ -26,6 +26,7 @@ Dynamic: classifier
 Dynamic: description
 Dynamic: description-content-type
 Dynamic: home-page
+Dynamic: license-file
 Dynamic: requires-dist
 Dynamic: requires-python
 Dynamic: summary

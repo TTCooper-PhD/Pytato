@@ -8,4 +8,4 @@ from .analysis.protein import Protein
 from .viz.plots import Plots
 
 # Version info
-__version__ = "0.5.3"  # or whatever your current version is
+__version__ = "0.6.0"  # or whatever your current version is
